@@ -1,0 +1,214 @@
+---
+title: "Homework 1"
+author: "Tim"
+date: "January 29, 2018"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE, 
+                      results='show', cache=TRUE, autodep=TRUE)
+```
+
+## Chapter 2.4
+
+### 8 (c)
+
+```{r}
+library(ISLR)
+college <- ISLR::College
+```
+
+#### (i)
+```{r}
+summary(college)
+```
+
+#### (ii)
+```{r}
+pairs(college[,1:10])
+```
+
+#### (iii)
+```{r}
+plot(Outstate ~ Private, data = college)
+```
+
+#### (iv)
+```{r}
+Elite = rep("No", nrow(college))
+Elite[college$Top10perc > 50] = "Yes"
+Elite = as.factor(Elite)
+college = data.frame(college, Elite)
+```
+
+```{r}
+summary(Elite)
+```
+There are 78 elite universities. 
+
+```{r}
+plot(Outstate ~ Elite, data = college)
+```
+
+#### (v)
+```{r}
+par(mfrow = c(1, 2))
+hist(college$Accept)
+hist(college$Enroll)
+```
+
+#### (vi)
+I found that as the number of part-time undergraduates increase, the number of full-time undergraduates increases less, or not at all in some cases.
+
+See this scatter plot, for example.
+```{r}
+plot(F.Undergrad ~ P.Undergrad, data = college)
+```
+
+This matches the idea that different universities cater to differ groups of students. For example, I would guess that the proportion of part-time undergraduates at UNO is higher than the proportion at UNL.
+
+### 9 
+```{r}
+autos <- ISLR::Auto
+```
+
+#### (a)
+
+`str` will give us a list of all the variables and tell us whether they are quantitative or qualitative: 
+```{r}
+str(autos)
+```
+
+The class is misleading on the `origin` variable, however. According to the documentation: "Origin of car (1. American, 2. European, 3. Japanese)." Additionally, I would say `cylinders` is also qualitative, since it is describing the type of engine and we would treat it as a factor. Lastly, you could treat `year` as a quantitative or qualitative variable. I'll say quantitative, since we might want to see if `mpg` improves over time, for example. If we treated the variable qualitatively we would loss the ordering.
+
+#### (b)
+```{r}
+quan_autos <- autos[,-c(2, 8, 9)]
+sapply(quan_autos, range)
+```
+
+#### (c)
+
+```{r}
+sapply(quan_autos, function (x) {c(mean = mean(x), sd = sd(x))})
+```
+
+#### (d)
+```{r}
+quan_autos <- quan_autos[-c(10:85),]
+sapply(
+  quan_autos, 
+  function (x) {c(mean = mean(x), sd = sd(x), range = range(x))}
+)
+```
+
+#### (e)
+
+```{r}
+library(tidyverse)
+ggplot(autos) +
+  geom_point(aes(x = year, y = mpg, color = as.factor(cylinders)))
+```
+
+This scatter plot shows average improvement of `mpg` over the years and highlights the different mpg possible with different cylinders. As expected, high cylinders have worse mpg than fewer cylinders, on average.
+
+You would also expect horsepower to trade off with mpg. Let's take a look:
+```{r}
+ggplot(autos) +
+  geom_point(aes(x = horsepower, y = mpg, color = as.factor(cylinders)))
+```
+
+This time we have a non-linear relationship, somewhat surprising to me. However, the cylinders are grouped as expected, with higher cylinders having both more horsepower and less mpg. 
+
+Mathematically, we might also expect a trade-off between weight and acceleration:
+```{r}
+ggplot(autos) +
+  geom_point(aes(x = weight, y = acceleration, color = as.factor(origin)))
+```
+This trend is much more variable, but the heavier cars do seem to have less acceleration. Moreover, almost all the cars weighing over 3000 lbs. are American made (`origin == 1`). The US has larger roads and we do more driving than any other country, so this is not surprising. Likewise, this fits into the American stereotype of large trucks and SUVs.
+
+#### (f)
+
+Both year and horsepower would do well in predicting mpg. However, horsepower appears to show a much more well-defined non-linear relationship than year, which might be most useful for prediction. 
+
+## Chapter 3.7 
+
+### 8
+
+#### (a)
+```{r}
+m <- lm(mpg ~ horsepower, data = autos)
+summary(m)
+```
+As we saw from the scatter plot, there clearly is a relationship between mpg and horsepower: as horsepower goes down, mpg goes down. This is confirmed by the negative slope coefficient and by the low p-values. However, visually we know the relationship is not linear, which is reflected in the R-squared value of 0.6059.
+
+```{r}
+predict(
+  m, newdata = data.frame(horsepower = 98), 
+  interval = 'confidence',
+  level = 0.95
+)
+predict(
+  m, newdata = data.frame(horsepower = 98), 
+  interval = 'prediction',
+  level = 0.95
+)
+```
+#### (b)
+
+```{r}
+plot(mpg ~ horsepower, data = autos)
+abline(a = coef(m)[1], b = coef(m)[2])
+```
+
+#### (c)
+
+```{r}
+plot(residuals(m))
+abline(h = 0)
+```
+
+The residuals are not normally distributed around zero. The residuals are too negative around low values of horsepower and too positive for large horsepower. That is consistent with the quadratic shape we see in the scatter plot. 
+
+## Graduate Problem
+
+```{r}
+point_dis22t <- function(dims) {
+  sapply(
+    dims, 
+    function(dim) { return(sqrt(sum((runif(dim) - runif(dim))^2))) } 
+  )
+}
+```
+
+```{r}
+d <- tibble(
+  dim = c(rep(10, 1e4), rep(50, 1e4), rep(100, 1e4), rep(500, 1e4), rep(1000, 1e4))
+)
+
+set.seed(123456)
+d <- d %>%
+  group_by(dim) %>%
+  mutate(distance = point_dist(dim)) %>%
+  mutate(dim_sample = sample(1e3, 1e4, replace = TRUE)) %>%
+  group_by(dim, dim_sample) %>%
+  summarise(ratio = mean(distance)/max(distance)) %>%
+  summarise(
+    mean_ratio = mean(ratio),
+    low_ratio = quantile(ratio, probs = 0.025)[[1]],
+    high_ratio = quantile(ratio, probs = 0.975)[[1]]
+  )
+d
+```
+
+```{r}
+d %>%
+  ggplot(aes(x = dim, y = mean_ratio)) + 
+    geom_point() + 
+    geom_linerange(aes(ymin = low_ratio, ymax = high_ratio))
+```
+
+

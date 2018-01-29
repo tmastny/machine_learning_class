@@ -1,0 +1,26 @@
+unnamed-chunk-1	library	ISLR	college	College
+unnamed-chunk-2	summary	college
+unnamed-chunk-3	pairs	college
+unnamed-chunk-4	plot	Outstate	Private	college
+unnamed-chunk-5	Elite	rep	nrow	college	Top10perc	as.factor	data.frame
+unnamed-chunk-6	summary	Elite
+unnamed-chunk-7	plot	Outstate	Elite	college
+unnamed-chunk-8	par	c	hist	college	Accept	Enroll
+unnamed-chunk-9	plot	F.Undergrad	P.Undergrad	college
+unnamed-chunk-10	autos	Auto
+unnamed-chunk-11	str	autos
+unnamed-chunk-12	quan_autos	autos	c	sapply	range
+unnamed-chunk-13	sapply	quan_autos	c	mean	x	sd
+unnamed-chunk-14	quan_autos	c	sapply	mean	x	sd	range
+unnamed-chunk-15	library	tidyverse	ggplot	autos	geom_point	aes	year	mpg	as.factor	cylinders
+unnamed-chunk-16	ggplot	autos	geom_point	aes	horsepower	mpg	as.factor	cylinders
+unnamed-chunk-17	ggplot	autos	geom_point	aes	weight	acceleration	as.factor	origin
+unnamed-chunk-18	m	lm	mpg	horsepower	autos	summary
+unnamed-chunk-19	predict	m	data.frame
+unnamed-chunk-20	plot	mpg	horsepower	autos	abline	coef	m
+unnamed-chunk-21	plot	residuals	m	abline
+unnamed-chunk-22	point_dist	sapply	dims	return	sqrt	sum	runif	dim
+unnamed-chunk-23	d	tibble	c	rep	set.seed	%>%	group_by	dim	mutate	point_dist	sample	dim_sample	summarise	mean	distance	max	ratio	quantile
+unnamed-chunk-24	d	%>%	ggplot	aes	dim	mean_ratio	geom_point	geom_linerange	low_ratio	high_ratio
+unnamed-chunk-25	d	%>%	ggplot	aes	dim	mean_ratio	geom_point	geom_linerange	low_ratio	high_ratio
+unnamed-chunk-26	d	%>%	ggplot	aes	dim	ratio	geom_point	geom_linerange	conf.low	conf.high
