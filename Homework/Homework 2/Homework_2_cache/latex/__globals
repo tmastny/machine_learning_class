@@ -1,0 +1,16 @@
+unnamed-chunk-1	prob_in_sample	return	n	d	data.frame	prob	plot	c
+unnamed-chunk-2	store	rep	i	sum	sample	mean
+unnamed-chunk-3	set.seed	x	rnorm	y
+unnamed-chunk-4	plot	y	x
+unnamed-chunk-5	set.seed	a	data.frame	x	y
+unnamed-chunk-6	models	list	lm	y	x	d	I
+unnamed-chunk-7	loocv	mse	nrow	d	i	m	mod_fun	y	predict	return	mean
+unnamed-chunk-8	library	purrr	map_dbl	models	loocv	.	a
+unnamed-chunk-9	set.seed	map_dbl	models	loocv	.	a
+unnamed-chunk-10	library	broom	map	models	tidy	.	a
+unnamed-chunk-11	library	tidyverse	rsample	magrittr	set.seed	d	tibble	runif	pi	rnorm	sin	x	abs
+unnamed-chunk-12	models	tibble	list	lm	y	x	d	I	sin	cos	%<>%	rowid_to_column
+unnamed-chunk-13	fold_mse	map_dbl	splits	trained_mod	mod_fun	analysis	split	augment	assessment	%>%	summarise	mean	y	.fitted	.	mse	cv_mse	is_list	mods	list
+unnamed-chunk-14	cv_folds	vfold_cv	d	models	%<>%	mutate	cv_mse	model	splits
+unnamed-chunk-15	models	%>%	ggplot	aes	rowid	fourfold_mse	geom_point	geom_line	ylim
+unnamed-chunk-16	pmap_dfr	list	models	model	rowid	d	%>%	mutate	predict	fun	num	ggplot	aes	x	geom_point	y	geom_line	pred	as.factor	number
