@@ -22,3 +22,5 @@ write_csv(training_data, 'Contest1/models/pca_data.csv')
 
 testing_data <- bake(pca_paint_trained, newdata = test_data)
 write_csv(testing_data, 'Contest1/models/testing_data.csv')
+
+
