@@ -1,0 +1,306 @@
+---
+title: "Homework 3"
+author: "Tim Mastny"
+date: "February 21, 2018"
+output:
+  html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE, 
+                      results='show', cache=TRUE, autodep=TRUE)
+```
+## 1
+The outside summation means that the total variance by class is scaled by the proportion observations within that region. This means that regions with a large number of observations are weighted more heavily. This is useful for growing trees, as it biases towards regions with many observations. This is likely to generalize better, and makes the trees easier to interpret. 
+
+
+## 2
+
+## Chapter 8.4: 4
+
+### (a)
+
+### (b)
+
+
+
+
+
+
+## Chapter 8.4: 5
+
+
+First, the majority vote says the class of $X$ is red.
+```{r}
+probs <- c(0.1, 0.15, 0.2, 0.2, 0.55, 0.6, 0.6, 0.65, 0.7, 0.75)
+length(probs[probs > 0.5]) > length(probs)/2
+```
+
+However, taking the average vote, we conclude the class of $X$ is not red. 
+```{r}
+mean(probs) > 0.5
+mean(probs)
+```
+
+
+
+## Chpater 8.4: 9
+
+### (a)
+
+```{r}
+library(ISLR)
+oj <- ISLR::OJ
+
+set.seed(73)
+n <- nrow(oj)
+rand_samples <- sample(n, 800, replace = FALSE)
+oj_training <- oj[rand_samples,]
+oj_test <- oj[-rand_samples,]
+```
+
+### (b)
+
+```{r}
+library(tree)
+tree_mod <- tree(Purchase ~ ., data = oj_training)
+summary(tree_mod)
+```
+
+We have the 10 nodes with error rate of 0.15. 
+
+### (c)
+
+```{r}
+tree_mod
+```
+
+The first temrinal node we see is number 8. Purchases of class `MM` are binned here, whenever `LoyalCH < 0.0356415` (and all the proceeding criteria) are true. 
+
+### (d)
+
+```{r}
+plot(tree_mod)
+text(tree_mod)
+```
+
+Seeing the tree plot like this is very useful: most importantly, we see that the first branch almost entirely seperates the `MM` and `CH` factors. There is only one terminal node after the first branch for both classes. Thus, `LoyalCH < 0.482304` seems like a very useful criteria for classification.
+
+### (e)
+
+```{r}
+pred <- predict(tree_mod, oj_test, type = 'class')
+table(pred, oj_test$Purchase)
+```
+Which gives us a test error rate of:
+```{r}
+(147 + 67)/(147 + 19 + 37 + 67)
+```
+
+
+### (f)
+
+```{r}
+cv_oj <- cv.tree(tree_mod, FUN = prune.misclass)
+cv_oj
+```
+
+### (g)
+
+```{r}
+plot(cv_oj$size, cv_oj$dev ,type="b")
+```
+
+### (h)
+
+So the initial model with 10 nodes is tied for the best cross-validation error with a 7 node tree. To reduce complexity, it may be preferrable to choose the 7 node tree model.
+
+### (i)
+
+```{r}
+pruned_tree <- prune.misclass(tree_mod, best = 7)
+```
+
+```{r}
+plot(pruned_tree)
+text(pruned_tree)
+```
+
+
+### (j)
+
+
+```{r}
+summary(pruned_tree)
+```
+
+Here the training error rates are equivalent. 
+
+### (k)
+
+```{r}
+pred <- predict(pruned_tree, oj_test, type = 'class')
+table(pred, oj_test$Purchase)
+```
+Which gives us a test error rate of:
+```{r}
+(147 + 67)/(147 + 19 + 37 + 67)
+```
+The error rate is exactly the same, which is not surprisingly considering the cross-validation error was the same. 
+
+However, a smaller tree is easier to interpret and since it performs well on the test set, it makes sense to prefer the pruned tree. 
+
+
+## 3
+
+```{r}
+spam = read.csv("http://thinktostart.com/data/data.csv",header=FALSE,sep=";")
+names(spam) = read.csv("http://thinktostart.com/data/names.csv",
+                       header=FALSE,sep=";",stringsAsFactors=FALSE)$V1
+spam$y = factor(spam$y)
+names(spam)[49:54] = paste0("char_freq_", 1:6)
+
+set.seed(98533795)
+```
+
+```{r}
+library(rsample)
+library(purrr)
+library(magrittr)
+spam_split <- initial_split(spam, prop = 3/4)
+```
+
+### rpart
+```{r}
+library(rpart)
+growtree = rpart.control(minsplit = 2, minbucket = 0, cp = 0)
+rpart_mod = rpart(y ~ ., data = training(spam_split), control = growtree)
+```
+
+### bagging
+
+We'll use the number of bootstrap sets to be $B = 100$, as per the example on page 317. 
+
+replace with `randomForest`
+
+```{r}
+library(randomForest)
+boot_num <- ncol(training(spam_split)) - 1
+bag_mod <- randomForest(y ~ ., data = training(spam_split), 
+             mtry = boot_num, ntrees = 500)
+```
+
+## C5.0
+
+```{r}
+library(caret)
+c50_mod <- train(y ~ ., data = training(spam_split), method = "C5.0")
+```
+
+
+## Weighted Sum
+
+Note that I am choosing to evaluating this model (and the models in the next section) based on MSE. Since we are considering a weighted sum, we might get predicted outcome like `0.2` if the individual predictions are `0, 1, 1` with weights `0.8, 0.1, 0.1`. So I think it makes the most sense to use MSE in this instance. 
+
+```{r}
+vec <- c(.1, .2, .3, .4, .5, .6, .7, .8, .9)
+weights <- list()
+i = 1
+for (v1 in vec) {
+  for (v2 in vec) {
+    for (v3 in vec) {
+      if ((v1 + v2 + v3) == 1) {
+        weights[[i]] <- c(v1, v2, v3)
+        i <- i + 1
+      }
+    }
+  }
+}
+```
+
+```{r}
+cv <- vfold_cv(training(spam_split), v = 6)
+```
+
+```{r}
+weight_pred <- function(data, models, weight) {
+  ave_pred = 
+    (as.numeric(predict(models[[1]], newdata = data, type = 'class')) - 1) * weight[1] +
+    (as.numeric(predict(models[[2]], newdata = data)) - 1) * weight[2] +
+    (as.numeric(predict(models[[3]], newdata = data)) - 1) * weight[3]
+}
+```
+
+```{r}
+fold_mse <- function(splits, models, weight) {
+  map_dbl(
+    splits,
+    function(split) {
+      test <- assessment(split)
+      fit <- weight_pred(test, models, weight)
+      mean(((as.numeric(test$y) - 1) - fit)^2)
+    }
+  )
+}
+```
+
+```{r}
+weights_mse <- function (splits, models, weights) {
+  map_dbl(weights, ~mean(fold_mse(splits, models, .)))
+}
+```
+
+```{r}
+computed_weights_mse <- weights_mse(cv$splits, 
+                                    list(rpart_mod, bag_mod, c50_mod),
+                                    weights)
+```
+
+```{r}
+trained_weight <- weights[[which.min(computed_weights_mse)]]
+```
+```{r}
+trained_weight
+```
+
+## Model Comparison
+
+rpart:
+```{r}
+test <- testing(spam_split)
+fit <- (as.numeric(predict(rpart_mod, newdata = test, type = 'class')) - 1)
+mean(((as.numeric(test$y) - 1) - fit)^2)
+```
+
+Bagged:
+```{r}
+fit <- (as.numeric(predict(bag_mod, newdata = test)) - 1)
+mean(((as.numeric(test$y) - 1) - fit)^2)
+```
+
+C5.0:
+```{r}
+fit <- (as.numeric(predict(c50_mod, newdata = test)) - 1)
+mean(((as.numeric(test$y) - 1) - fit)^2)
+```
+
+Weighted Average:
+```{r}
+fit <- weight_pred(test, list(rpart_mod, bag_mod, c50_mod), trained_weight)
+mean(((as.numeric(test$y) - 1) - fit)^2)
+```
+
+So as measured by MSE on the test set, the C5.0 model actually performs the best. This is interesting, because as seen in the last section, most of the training weight is given to the bagged model. 
+
+Just for fun, let's see the MSE on the test set if the weighted model actually favored C5.0:
+```{r}
+fit <- weight_pred(test, list(rpart_mod, bag_mod, c50_mod), c(0.1, 0.1, 0.8))
+mean(((as.numeric(test$y) - 1) - fit)^2)
+```
+Our MSE is now lower than the C5.0 model alone. As a side note, this is not a good way to tune a model. We shouldn't be changing the weights based on the performance of the test set, only evaluating our selection of models. However, this outcome might hint that we could have improved our weight tuning. 
+
+For example, maybe we could have generated a new 6-fold cross-validation set for each weight.
+
+
+
+

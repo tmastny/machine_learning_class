@@ -1,0 +1,15 @@
+unnamed-chunk-1	probs	c	length
+unnamed-chunk-2	mean	probs
+unnamed-chunk-3	library	ISLR	oj	OJ	set.seed	n	nrow	rand_samples	sample	oj_training	oj_test
+unnamed-chunk-4	library	tree	tree_mod	Purchase	.	oj_training	summary
+unnamed-chunk-5	tree_mod
+unnamed-chunk-6	plot	tree_mod	text
+unnamed-chunk-7	pred	predict	tree_mod	oj_test	table	Purchase
+unnamed-chunk-8	
+unnamed-chunk-9	cv_oj	cv.tree	tree_mod	prune.misclass
+unnamed-chunk-10	plot	cv_oj	size	dev
+unnamed-chunk-11	pruned_tree	prune.misclass	tree_mod
+unnamed-chunk-12	plot	pruned_tree	text
+unnamed-chunk-13	summary	pruned_tree
+unnamed-chunk-14	pred	predict	pruned_tree	oj_test	table	Purchase
+unnamed-chunk-15	

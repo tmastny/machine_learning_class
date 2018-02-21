@@ -1,0 +1,158 @@
+---
+title: "Homework 3"
+author: "Tim Mastny"
+date: "February 21, 2018"
+output:
+  html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE, 
+                      results='show', cache=TRUE, autodep=TRUE)
+```
+
+## 1
+The outside summation means that the total variance by class is scaled by the proportion observations within that region. This means that regions with a large number of observations are weighted more heavily. This is useful for growing trees, as it biases towards regions with many observations. This is likely to generalize better, and makes the trees easier to interpret. 
+
+
+## 2
+
+## Chapter 8.4: 4
+
+### (a)
+
+### (b)
+
+
+
+
+
+
+## Chapter 8.4: 5
+
+
+First, the majority vote says the class of $X$ is red.
+```{r}
+probs <- c(0.1, 0.15, 0.2, 0.2, 0.55, 0.6, 0.6, 0.65, 0.7, 0.75)
+length(probs[probs > 0.5]) > length(probs)/2
+```
+
+However, taking the average vote, we conclude the class of $X$ is not red. 
+```{r}
+mean(probs) > 0.5
+mean(probs)
+```
+
+
+
+## Chpater 8.4: 9
+
+### (a)
+
+```{r}
+library(ISLR)
+oj <- ISLR::OJ
+
+set.seed(73)
+n <- nrow(oj)
+rand_samples <- sample(n, 800, replace = FALSE)
+oj_training <- oj[rand_samples,]
+oj_test <- oj[-rand_samples,]
+```
+
+### (b)
+
+```{r}
+library(tree)
+tree_mod <- tree(Purchase ~ ., data = oj_training)
+summary(tree_mod)
+```
+
+We have the 10 nodes with error rate of 0.15. 
+
+### (c)
+
+```{r}
+tree_mod
+```
+
+The first temrinal node we see is number 8. Purchases of class `MM` are binned here, whenever `LoyalCH < 0.0356415` (and all the proceeding criteria) are true. 
+
+### (d)
+
+```{r}
+plot(tree_mod)
+text(tree_mod)
+```
+
+Seeing the tree plot like this is very useful: most importantly, we see that the first branch almost entirely seperates the `MM` and `CH` factors. There is only one terminal node after the first branch for both classes. Thus, `LoyalCH < 0.482304` seems like a very useful criteria for classification.
+
+### (e)
+
+```{r}
+pred <- predict(tree_mod, oj_test, type = 'class')
+table(pred, oj_test$Purchase)
+```
+Which gives us a test error rate of:
+```{r}
+(147 + 67)/(147 + 19 + 37 + 67)
+```
+
+
+### (f)
+
+```{r}
+cv_oj <- cv.tree(tree_mod, FUN = prune.misclass)
+cv_oj
+```
+
+### (g)
+
+```{r}
+plot(cv_oj$size, cv_oj$dev ,type="b")
+```
+
+### (h)
+
+So the initial model with 10 nodes is tied for the best cross-validation error with a 7 node tree. To reduce complexity, it may be preferrable to choose the 7 node tree model.
+
+### (i)
+
+```{r}
+pruned_tree <- prune.misclass(tree_mod, best = 7)
+```
+
+```{r}
+plot(pruned_tree)
+text(pruned_tree)
+```
+
+
+### (j)
+
+
+```{r}
+summary(pruned_tree)
+```
+
+Here the training error rates are equivalent. 
+
+### (k)
+
+```{r}
+pred <- predict(pruned_tree, oj_test, type = 'class')
+table(pred, oj_test$Purchase)
+```
+Which gives us a test error rate of:
+```{r}
+(147 + 67)/(147 + 19 + 37 + 67)
+```
+The error rate is exactly the same, which is not surprisingly considering the cross-validation error was the same. 
+
+However, a smaller tree is easier to interpret and since it performs well on the test set, it makes sense to prefer the pruned tree. 
+
+
+
+
+
+
