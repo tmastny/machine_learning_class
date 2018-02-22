@@ -4,8 +4,8 @@ unnamed-chunk-3	library	ISLR	oj	OJ	set.seed	n	nrow	rand_samples	sample	oj_traini
 unnamed-chunk-4	library	tree	tree_mod	Purchase	.	oj_training	summary
 unnamed-chunk-5	tree_mod
 unnamed-chunk-6	plot	tree_mod	text
-unnamed-chunk-7	pred	predict	tree_mod	oj_test	table	Purchase
-unnamed-chunk-8	
+unnamed-chunk-7	pred	predict	tree_mod	oj_test	t	table	Purchase
+unnamed-chunk-8	sum	c	t
 unnamed-chunk-9	cv_oj	cv.tree	tree_mod	prune.misclass
 unnamed-chunk-10	plot	cv_oj	size	dev
 unnamed-chunk-11	pruned_tree	prune.misclass	tree_mod

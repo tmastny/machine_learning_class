@@ -90,11 +90,12 @@ Seeing the tree plot like this is very useful: most importantly, we see that the
 
 ```{r}
 pred <- predict(tree_mod, oj_test, type = 'class')
-table(pred, oj_test$Purchase)
+t <- table(pred, oj_test$Purchase)
+t
 ```
 Which gives us a test error rate of:
 ```{r}
-(147 + 67)/(147 + 19 + 37 + 67)
+sum(c(t[1,1], t[2,2]))/sum(t)
 ```
 
 
