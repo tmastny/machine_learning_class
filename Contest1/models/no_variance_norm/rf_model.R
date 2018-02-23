@@ -11,10 +11,16 @@ registerDoMC(cores = 4)
 paintings <- read_csv('Contest1/models/no_variance_norm/training_data.csv')
 testing_data <- read_csv('Contest1/models/no_variance_norm/testing_data.csv')
 
+rf_grid = expand.grid(mtry = 1:24)
+
 cvCtrl = trainControl(method = "repeatedcv", number = 10, 
                       repeats = 3, classProbs = TRUE)
-caret_model <- train(class ~ ., data = paintings, method = 'rf', 
-                     trControl = cvCtrl)
+caret_model <- train(
+  class ~ ., 
+  data = paintings, 
+  method = 'rf', 
+  trControl = cvCtrl,
+  tuneGrid = rf_grid)
 
 
 

@@ -219,12 +219,15 @@ text(tree_mod)</code></pre>
 <div id="e" class="section level3">
 <h3>(e)</h3>
 <pre class="r"><code>pred &lt;- predict(tree_mod, oj_test, type = 'class')
-table(pred, oj_test$Purchase)</code></pre>
+t &lt;- table(pred, oj_test$Purchase)
+t</code></pre>
 <pre><code>##     
 ## pred  CH  MM
 ##   CH 147  37
 ##   MM  19  67</code></pre>
 <p>Which gives us a test error rate of:</p>
+<pre class="r"><code>sum(c(t[1,1], t[2,2]))/sum(t)</code></pre>
+<pre><code>## [1] 0.7925926</code></pre>
 <pre class="r"><code>(147 + 67)/(147 + 19 + 37 + 67)</code></pre>
 <pre><code>## [1] 0.7925926</code></pre>
 </div>
