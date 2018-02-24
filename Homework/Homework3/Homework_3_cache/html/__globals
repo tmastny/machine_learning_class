@@ -20,14 +20,14 @@ unnamed-chunk-19	library	randomForest	boot_num	ncol	training	spam_split	bag_mod	
 unnamed-chunk-20	library	caret	c50_mod	train	y	.	training	spam_split
 unnamed-chunk-21	vec	c	weights	list	i	v1	v2	v3
 unnamed-chunk-22	cv	vfold_cv	training	spam_split
-unnamed-chunk-23	weight_pred	ave_pred	as.numeric	predict	models	data	weight
-unnamed-chunk-24	fold_mse	map_dbl	splits	test	assessment	split	fit	weight_pred	models	weight	mean	as.numeric	y
+unnamed-chunk-23	weight_pred	ave_pred	as.numeric	predict	models	data	weight	if_else
+unnamed-chunk-24	fold_mse	map_dbl	splits	test	assessment	split	fit	weight_pred	models	weight	t	table	y	sum	c
 unnamed-chunk-25	weights_mse	map_dbl	weights	mean	fold_mse	splits	models	.
 unnamed-chunk-26	computed_weights_mse	weights_mse	cv	splits	list	rpart_mod	bag_mod	c50_mod	weights
 unnamed-chunk-27	trained_weight	weights	which.min	computed_weights_mse
 unnamed-chunk-28	trained_weight
-unnamed-chunk-29	test	testing	spam_split	fit	as.numeric	predict	rpart_mod	mean	y
-unnamed-chunk-30	fit	as.numeric	predict	bag_mod	test	mean	y
-unnamed-chunk-31	fit	as.numeric	predict	c50_mod	test	mean	y
-unnamed-chunk-32	fit	weight_pred	test	list	rpart_mod	bag_mod	c50_mod	trained_weight	mean	as.numeric	y
-unnamed-chunk-33	fit	weight_pred	test	list	rpart_mod	bag_mod	c50_mod	c	mean	as.numeric	y
+unnamed-chunk-29	test	testing	spam_split	fit	as.numeric	predict	rpart_mod	t	table	y	sum	c
+unnamed-chunk-30	fit	as.numeric	predict	bag_mod	test	t	table	y	sum	c
+unnamed-chunk-31	fit	as.numeric	predict	c50_mod	test	t	table	y	sum	c
+unnamed-chunk-32	fit	weight_pred	test	list	rpart_mod	bag_mod	c50_mod	trained_weight	t	table	y	sum	c
+unnamed-chunk-33	fit	weight_pred	test	list	rpart_mod	bag_mod	c50_mod	c	t	table	y	sum

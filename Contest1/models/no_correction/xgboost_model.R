@@ -12,7 +12,7 @@ paintings <- read_csv('Contest1/train.csv')
 testing_data <- read_csv('Contest1/test.csv')
 
 xg_grid = expand.grid(
-  nrounds = 100:1000,
+  nrounds = 10000,
   eta = 0.3,
   max_depth = 6:20,
   gamma = 0,

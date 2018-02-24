@@ -3,7 +3,8 @@ title: "Homework 3"
 author: "Tim Mastny"
 date: "February 21, 2018"
 output:
-  html_document
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -229,6 +230,7 @@ weight_pred <- function(data, models, weight) {
     (as.numeric(predict(models[[1]], newdata = data, type = 'class')) - 1) * weight[1] +
     (as.numeric(predict(models[[2]], newdata = data)) - 1) * weight[2] +
     (as.numeric(predict(models[[3]], newdata = data)) - 1) * weight[3]
+  ave_pred <- ifelse(ave_pred > 0.5, "1", "0")
 }
 ```
 
@@ -239,7 +241,9 @@ fold_mse <- function(splits, models, weight) {
     function(split) {
       test <- assessment(split)
       fit <- weight_pred(test, models, weight)
-      mean(((as.numeric(test$y) - 1) - fit)^2)
+      t <- table(test$y, fit)
+      sum(c(t[1,1], t[2,2]))/sum(t)
+      #mean(((as.numeric(test$y) - 1) - fit)^2)
     }
   )
 }
@@ -270,37 +274,32 @@ rpart:
 ```{r}
 test <- testing(spam_split)
 fit <- (as.numeric(predict(rpart_mod, newdata = test, type = 'class')) - 1)
-mean(((as.numeric(test$y) - 1) - fit)^2)
+t <- table(test$y, fit)
+sum(c(t[1,1], t[2,2]))/sum(t)
 ```
 
 Bagged:
 ```{r}
 fit <- (as.numeric(predict(bag_mod, newdata = test)) - 1)
-mean(((as.numeric(test$y) - 1) - fit)^2)
+t <- table(test$y, fit)
+sum(c(t[1,1], t[2,2]))/sum(t)
 ```
 
 C5.0:
 ```{r}
 fit <- (as.numeric(predict(c50_mod, newdata = test)) - 1)
-mean(((as.numeric(test$y) - 1) - fit)^2)
+t <- table(test$y, fit)
+sum(c(t[1,1], t[2,2]))/sum(t)
 ```
 
 Weighted Average:
 ```{r}
 fit <- weight_pred(test, list(rpart_mod, bag_mod, c50_mod), trained_weight)
-mean(((as.numeric(test$y) - 1) - fit)^2)
+t <- table(test$y, fit)
+sum(c(t[1,1], t[2,2]))/sum(t)
 ```
 
-So as measured by MSE on the test set, the C5.0 model actually performs the best. This is interesting, because as seen in the last section, most of the training weight is given to the bagged model. 
-
-Just for fun, let's see the MSE on the test set if the weighted model actually favored C5.0:
-```{r}
-fit <- weight_pred(test, list(rpart_mod, bag_mod, c50_mod), c(0.1, 0.1, 0.8))
-mean(((as.numeric(test$y) - 1) - fit)^2)
-```
-Our MSE is now lower than the C5.0 model alone. As a side note, this is not a good way to tune a model. We shouldn't be changing the weights based on the performance of the test set, only evaluating our selection of models. However, this outcome might hint that we could have improved our weight tuning. 
-
-For example, maybe we could have generated a new 6-fold cross-validation set for each weight.
+So as measured by MSE on the test set, the C5.0 model is tied with the linear combination model. This result is exactly what we would expect from the given the weight `0.1, 0.1, 0.8` found in training. That weight means any classification by the C5.0 model basically overrides the selection from the other two models. 
 
 
 
