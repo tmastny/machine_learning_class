@@ -14,10 +14,10 @@ test_data <- read_csv('Contest1/test.csv')
 paint_recipe <- recipe(class ~ ., data = head(paintings))
 
 paint_recipe <- paint_recipe %>%
-  step_center(matches("([rgb][0][1-4][0-9]{2})|([rgb][0-9]{2}[0][1-4])")) %>%
-  step_scale(matches("([rgb][0][1-4][0-9]{2})|([rgb][0-9]{2}[0][1-4])")) %>%
-  step_center(all_predictors(), -matches("([rgb][0][1-4][0-9]{2})|([rgb][0-9]{2}[0][1-4])")) %>%
-  step_scale(all_predictors(), -matches("([rgb][0][1-4][0-9]{2})|([rgb][0-9]{2}[0][1-4])"))
+  step_center(matches("([rgb][0][1-4][0-9]{2})|([rgb][0-9]{2}[0][1-2])")) %>%
+  step_scale(matches("([rgb][0][1-4][0-9]{2})|([rgb][0-9]{2}[0][1-2])")) %>%
+  step_center(all_predictors(), -matches("([rgb][0][1-4][0-9]{2})|([rgb][0-9]{2}[0][1-2])")) %>%
+  step_scale(all_predictors(), -matches("([rgb][0][1-4][0-9]{2})|([rgb][0-9]{2}[0][1-2])"))
           
 paint_trained <- prep(paint_recipe, training = paintings)
 
