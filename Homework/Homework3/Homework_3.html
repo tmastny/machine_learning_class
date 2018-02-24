@@ -228,8 +228,6 @@ t</code></pre>
 <p>Which gives us a test error rate of:</p>
 <pre class="r"><code>sum(c(t[1,1], t[2,2]))/sum(t)</code></pre>
 <pre><code>## [1] 0.7925926</code></pre>
-<pre class="r"><code>(147 + 67)/(147 + 19 + 37 + 67)</code></pre>
-<pre><code>## [1] 0.7925926</code></pre>
 </div>
 <div id="f" class="section level3">
 <h3>(f)</h3>
@@ -350,6 +348,7 @@ for (v1 in vec) {
     (as.numeric(predict(models[[1]], newdata = data, type = 'class')) - 1) * weight[1] +
     (as.numeric(predict(models[[2]], newdata = data)) - 1) * weight[2] +
     (as.numeric(predict(models[[3]], newdata = data)) - 1) * weight[3]
+  ave_pred &lt;- if_else(ave_pred &gt; 0.5, &quot;1&quot;, &quot;0&quot;)
 }</code></pre>
 <pre class="r"><code>fold_mse &lt;- function(splits, models, weight) {
   map_dbl(
@@ -357,7 +356,9 @@ for (v1 in vec) {
     function(split) {
       test &lt;- assessment(split)
       fit &lt;- weight_pred(test, models, weight)
-      mean(((as.numeric(test$y) - 1) - fit)^2)
+      t &lt;- table(test$y, fit)
+      sum(c(t[1,1], t[2,2]))/sum(t)
+      #mean(((as.numeric(test$y) - 1) - fit)^2)
     }
   )
 }</code></pre>
@@ -369,34 +370,32 @@ for (v1 in vec) {
                                     weights)</code></pre>
 <pre class="r"><code>trained_weight &lt;- weights[[which.min(computed_weights_mse)]]</code></pre>
 <pre class="r"><code>trained_weight</code></pre>
-<pre><code>## [1] 0.1 0.8 0.1</code></pre>
+<pre><code>## [1] 0.1 0.1 0.8</code></pre>
 </div>
 <div id="model-comparison" class="section level2">
 <h2>Model Comparison</h2>
 <p>rpart:</p>
 <pre class="r"><code>test &lt;- testing(spam_split)
 fit &lt;- (as.numeric(predict(rpart_mod, newdata = test, type = 'class')) - 1)
-mean(((as.numeric(test$y) - 1) - fit)^2)</code></pre>
-<pre><code>## [1] 0.09478261</code></pre>
+t &lt;- table(test$y, fit)
+sum(c(t[1,1], t[2,2]))/sum(t)</code></pre>
+<pre><code>## [1] 0.9052174</code></pre>
 <p>Bagged:</p>
 <pre class="r"><code>fit &lt;- (as.numeric(predict(bag_mod, newdata = test)) - 1)
-mean(((as.numeric(test$y) - 1) - fit)^2)</code></pre>
-<pre><code>## [1] 0.05130435</code></pre>
+t &lt;- table(test$y, fit)
+sum(c(t[1,1], t[2,2]))/sum(t)</code></pre>
+<pre><code>## [1] 0.9486957</code></pre>
 <p>C5.0:</p>
 <pre class="r"><code>fit &lt;- (as.numeric(predict(c50_mod, newdata = test)) - 1)
-mean(((as.numeric(test$y) - 1) - fit)^2)</code></pre>
-<pre><code>## [1] 0.03565217</code></pre>
+t &lt;- table(test$y, fit)
+sum(c(t[1,1], t[2,2]))/sum(t)</code></pre>
+<pre><code>## [1] 0.9643478</code></pre>
 <p>Weighted Average:</p>
 <pre class="r"><code>fit &lt;- weight_pred(test, list(rpart_mod, bag_mod, c50_mod), trained_weight)
-mean(((as.numeric(test$y) - 1) - fit)^2)</code></pre>
-<pre><code>## [1] 0.04455652</code></pre>
-<p>So as measured by MSE on the test set, the C5.0 model actually performs the best. This is interesting, because as seen in the last section, most of the training weight is given to the bagged model.</p>
-<p>Just for fun, let’s see the MSE on the test set if the weighted model actually favored C5.0:</p>
-<pre class="r"><code>fit &lt;- weight_pred(test, list(rpart_mod, bag_mod, c50_mod), c(0.1, 0.1, 0.8))
-mean(((as.numeric(test$y) - 1) - fit)^2)</code></pre>
-<pre><code>## [1] 0.03311304</code></pre>
-<p>Our MSE is now lower than the C5.0 model alone. As a side note, this is not a good way to tune a model. We shouldn’t be changing the weights based on the performance of the test set, only evaluating our selection of models. However, this outcome might hint that we could have improved our weight tuning.</p>
-<p>For example, maybe we could have generated a new 6-fold cross-validation set for each weight.</p>
+t &lt;- table(test$y, fit)
+sum(c(t[1,1], t[2,2]))/sum(t)</code></pre>
+<pre><code>## [1] 0.9643478</code></pre>
+<p>So as measured by MSE on the test set, the C5.0 model is tied with the linear combination model. This result is exactly what we would expect from the given the weight <code>0.1, 0.1, 0.8</code> found in training. That weight means any classification by the C5.0 model basically overrides the selection from the other two models.</p>
 </div>
 
 

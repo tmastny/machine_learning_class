@@ -1,0 +1,49 @@
+
+knitr::opts_knit$set(root.dir = here::here())
+
+library(tidyverse)
+library(recipes)
+library(caret)
+
+library(doMC)
+registerDoMC(cores = 4)
+
+paintings <- read_csv('Contest1/train.csv')
+test_data <- read_csv('Contest1/test.csv')
+
+paint_recipe <- recipe(class ~ ., data = head(paintings))
+
+paint_recipe <- paint_recipe %>%
+  step_center(all_predictors()) %>%
+  step_scale(all_predictors())
+
+std_paint_trained <- prep(paint_recipe, training = paintings)
+
+training_data <- bake(std_paint_trained, newdata = paintings)
+testing_data <- bake(std_paint_trained, newdata = test_data)
+
+bag_grid <- expand.grid(
+  degree = c(1),
+  nprune = c(2, 9, 17, 25, 30, 40)
+)
+
+tr_control = trainControl(
+  method = "cv",
+  number = 5,
+  returnResamp = "all",
+  classProbs = TRUE
+)
+
+caret_model <- train(
+  class ~ ., 
+  data = training_data, 
+  method = 'bagFDA',
+  trControl = tr_control,
+  tuneGrid = ada_grid)
+
+
+caret_model 
+
+write_csv(data.frame(id = 1:63, class = predict(caret_model, testing_data)), 
+          'Contest1/models/norm_stan/adabag_norm_std_sub.csv')
+

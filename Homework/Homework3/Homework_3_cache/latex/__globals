@@ -1,1 +1,32 @@
-unnamed-chunk-1	spam	read.csv	names	V1	y	factor
+unnamed-chunk-1	probs	c	length
+unnamed-chunk-2	mean	probs
+unnamed-chunk-3	library	ISLR	oj	OJ	set.seed	n	nrow	rand_samples	sample	oj_training	oj_test
+unnamed-chunk-4	library	tree	tree_mod	Purchase	.	oj_training	summary
+unnamed-chunk-5	tree_mod
+unnamed-chunk-6	plot	tree_mod	text
+unnamed-chunk-7	pred	predict	tree_mod	oj_test	t	table	Purchase
+unnamed-chunk-8	sum	c	t
+unnamed-chunk-9	cv_oj	cv.tree	tree_mod	prune.misclass
+unnamed-chunk-10	plot	cv_oj	size	dev
+unnamed-chunk-11	pruned_tree	prune.misclass	tree_mod
+unnamed-chunk-12	plot	pruned_tree	text
+unnamed-chunk-13	summary	pruned_tree
+unnamed-chunk-14	pred	predict	pruned_tree	oj_test	table	Purchase
+unnamed-chunk-15	
+unnamed-chunk-16	spam	read.csv	names	V1	y	factor	paste0	set.seed
+unnamed-chunk-17	library	rsample	purrr	magrittr	spam_split	initial_split	spam
+unnamed-chunk-18	library	rpart	growtree	rpart.control	rpart_mod	y	.	training	spam_split
+unnamed-chunk-19	library	randomForest	boot_num	ncol	training	spam_split	bag_mod	y	.
+unnamed-chunk-20	library	caret	c50_mod	train	y	.	training	spam_split
+unnamed-chunk-21	vec	c	weights	list	i	v1	v2	v3
+unnamed-chunk-22	cv	vfold_cv	training	spam_split
+unnamed-chunk-23	weight_pred	ave_pred	as.numeric	predict	models	data	weight	ifelse
+unnamed-chunk-24	fold_mse	map_dbl	splits	test	assessment	split	fit	weight_pred	models	weight	t	table	y	sum	c
+unnamed-chunk-25	weights_mse	map_dbl	weights	mean	fold_mse	splits	models	.
+unnamed-chunk-26	computed_weights_mse	weights_mse	cv	splits	list	rpart_mod	bag_mod	c50_mod	weights
+unnamed-chunk-27	trained_weight	weights	which.min	computed_weights_mse
+unnamed-chunk-28	trained_weight
+unnamed-chunk-29	test	testing	spam_split	fit	as.numeric	predict	rpart_mod	t	table	y	sum	c
+unnamed-chunk-30	fit	as.numeric	predict	bag_mod	test	t	table	y	sum	c
+unnamed-chunk-31	fit	as.numeric	predict	c50_mod	test	t	table	y	sum	c
+unnamed-chunk-32	fit	weight_pred	test	list	rpart_mod	bag_mod	c50_mod	trained_weight	t	table	y	sum	c

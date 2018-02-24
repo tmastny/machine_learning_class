@@ -1,0 +1,68 @@
+---
+title: "testing"
+author: "Tim"
+date: "February 23, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, cache = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(recipes)
+library(caret)
+library(rsample)
+
+library(doMC)
+registerDoMC(cores = 4)
+
+paintings <- read_csv('../../train.csv')
+paintings_split <- initial_split(paintings, prop = 2/3)
+
+paint_recipe <- recipe(class ~ ., data = head(paintings))
+
+paint_recipe <- paint_recipe %>%
+  step_center(all_predictors()) %>%
+  step_scale(all_predictors())
+
+std_paint_trained <- prep(paint_recipe, training = paintings)
+
+training_data <- bake(std_paint_trained, newdata = training(paintings_split))
+testing_data <- bake(std_paint_trained, newdata = testing(paintings_split))
+```
+
+```{r}
+cvCtrl = trainControl(method = "repeatedcv", number = 10, 
+                      repeats = 3, classProbs = TRUE)
+caret_model <- train(
+  class ~ ., 
+  data = training_data, 
+  method = 'rf', 
+  trControl = cvCtrl)
+```
+
+```{r}
+pred <- predict(caret_model, newdata = testing_data)
+```
+```{r}
+actual <- testing_data$class
+t <- as.matrix(table(pred, actual))
+t 
+```
+
+Accurary:
+
+```{r}
+sum(diag(t))/sum(t)
+```
+
+Per class performance:
+```{r}
+acc_class <- diag(t)/apply(t, 1, sum)
+pre_class <- diag(t)/apply(t, 2, sum)
+data.frame(correct = diag(t), total = apply(t, 2, sum),  acc = acc_class, pre = pre_class)
+```
+
+

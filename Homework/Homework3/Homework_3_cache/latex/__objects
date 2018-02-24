@@ -1,1 +1,32 @@
-unnamed-chunk-1	spam
+unnamed-chunk-1	probs
+unnamed-chunk-2	
+unnamed-chunk-3	n	oj	oj_test	oj_training	rand_samples	.Random.seed
+unnamed-chunk-4	tree_mod
+unnamed-chunk-5	
+unnamed-chunk-6	
+unnamed-chunk-7	pred	t
+unnamed-chunk-8	
+unnamed-chunk-9	cv_oj
+unnamed-chunk-10	
+unnamed-chunk-11	pruned_tree
+unnamed-chunk-12	
+unnamed-chunk-13	
+unnamed-chunk-14	pred
+unnamed-chunk-15	
+unnamed-chunk-16	spam
+unnamed-chunk-17	spam_split
+unnamed-chunk-18	growtree	rpart_mod
+unnamed-chunk-19	bag_mod	boot_num
+unnamed-chunk-20	c50_mod
+unnamed-chunk-21	i	v1	v2	v3	vec	weights
+unnamed-chunk-22	cv
+unnamed-chunk-23	weight_pred
+unnamed-chunk-24	fold_mse
+unnamed-chunk-25	weights_mse
+unnamed-chunk-26	computed_weights_mse
+unnamed-chunk-27	trained_weight
+unnamed-chunk-28	
+unnamed-chunk-29	fit	t	test
+unnamed-chunk-30	fit	t
+unnamed-chunk-31	fit	t
+unnamed-chunk-32	fit	t
