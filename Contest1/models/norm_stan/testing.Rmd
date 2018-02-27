@@ -6,7 +6,7 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, cache = TRUE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, cache = FALSE)
 ```
 
 ```{r}
@@ -25,7 +25,8 @@ paint_recipe <- recipe(class ~ ., data = head(paintings))
 
 paint_recipe <- paint_recipe %>%
   step_center(all_predictors()) %>%
-  step_scale(all_predictors())
+  step_scale(all_predictors()) %>%
+  step_corr(all_predictors())
 
 std_paint_trained <- prep(paint_recipe, training = paintings)
 
@@ -34,13 +35,13 @@ testing_data <- bake(std_paint_trained, newdata = testing(paintings_split))
 ```
 
 ```{r}
-cvCtrl = trainControl(method = "repeatedcv", number = 10, 
-                      repeats = 3, classProbs = TRUE)
+cvCtrl = trainControl(method = "cv", number = 10, classProbs = TRUE)
 caret_model <- train(
   class ~ ., 
   data = training_data, 
   method = 'rf', 
   trControl = cvCtrl)
+caret_model
 ```
 
 ```{r}

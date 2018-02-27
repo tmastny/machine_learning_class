@@ -141,49 +141,68 @@ paint_recipe &lt;- recipe(class ~ ., data = head(paintings))
 
 paint_recipe &lt;- paint_recipe %&gt;%
   step_center(all_predictors()) %&gt;%
-  step_scale(all_predictors())
+  step_scale(all_predictors()) %&gt;%
+  step_corr(all_predictors())
 
 std_paint_trained &lt;- prep(paint_recipe, training = paintings)
 
 training_data &lt;- bake(std_paint_trained, newdata = training(paintings_split))
 testing_data &lt;- bake(std_paint_trained, newdata = testing(paintings_split))</code></pre>
-<pre class="r"><code>cvCtrl = trainControl(method = &quot;repeatedcv&quot;, number = 10, 
-                      repeats = 3, classProbs = TRUE)
+<pre class="r"><code>cvCtrl = trainControl(method = &quot;cv&quot;, number = 10, classProbs = TRUE)
 caret_model &lt;- train(
   class ~ ., 
   data = training_data, 
   method = 'rf', 
-  trControl = cvCtrl)</code></pre>
+  trControl = cvCtrl)
+caret_model</code></pre>
+<pre><code>## Random Forest 
+## 
+##  119 samples
+## 1115 predictors
+##    8 classes: 'cold', 'dusk', 'flowers', 'impressions', 'oval', 'scene', 'trees', 'water' 
+## 
+## No pre-processing
+## Resampling: Cross-Validated (10 fold) 
+## Summary of sample sizes: 107, 107, 107, 105, 109, 105, ... 
+## Resampling results across tuning parameters:
+## 
+##   mtry  Accuracy   Kappa    
+##      2  0.3503879  0.2061101
+##     47  0.3588378  0.2129175
+##   1114  0.3342707  0.1824008
+## 
+## Accuracy was used to select the optimal model using the largest value.
+## The final value used for the model was mtry = 47.</code></pre>
 <pre class="r"><code>pred &lt;- predict(caret_model, newdata = testing_data)</code></pre>
 <pre class="r"><code>actual &lt;- testing_data$class
 t &lt;- as.matrix(table(pred, actual))
 t </code></pre>
 <pre><code>##              actual
 ## pred          cold dusk flowers impressions oval scene trees water
-##   cold           3    1       1           0    0     1     0     1
-##   dusk           0    2       4           0    0     2     1     1
-##   flowers        0    0       3           0    0     0     0     0
-##   impressions    0    0       0           3    0     0     0     0
-##   oval           0    0       0           0    0     1     0     0
-##   scene          1    0       1           0    0     3     0     4
-##   trees          0    0       0           0    0     0     1     0
-##   water          1    5       2           2    0     3     5     7</code></pre>
+##   cold           4    3       0           0    0     0     0     1
+##   dusk           1    3       2           0    1     1     0     1
+##   flowers        1    0       4           0    0     0     0     0
+##   impressions    0    1       0           9    0     0     0     0
+##   oval           0    0       0           0    0     0     0     0
+##   scene          1    1       0           0    0     3     1     1
+##   trees          1    1       0           0    0     0     2     1
+##   water          1    2       0           1    0     4     4     3</code></pre>
 <p>Accurary:</p>
 <pre class="r"><code>sum(diag(t))/sum(t)</code></pre>
-<pre><code>## [1] 0.3728814</code></pre>
+<pre><code>## [1] 0.4745763</code></pre>
 <p>Per class performance:</p>
 <pre class="r"><code>acc_class &lt;- diag(t)/apply(t, 1, sum)
 pre_class &lt;- diag(t)/apply(t, 2, sum)
 data.frame(correct = diag(t), total = apply(t, 2, sum),  acc = acc_class, pre = pre_class)</code></pre>
 <pre><code>##             correct total       acc       pre
-## cold              3     5 0.4285714 0.6000000
-## dusk              2     8 0.2000000 0.2500000
-## flowers           3    11 1.0000000 0.2727273
-## impressions       3     5 1.0000000 0.6000000
-## oval              0     0 0.0000000       NaN
-## scene             3    10 0.3333333 0.3000000
-## trees             1     7 1.0000000 0.1428571
-## water             7    13 0.2800000 0.5384615</code></pre>
+## cold              4     9 0.5000000 0.4444444
+## dusk              3    11 0.3333333 0.2727273
+## flowers           4     6 0.8000000 0.6666667
+## impressions       9    10 0.9000000 0.9000000
+## oval              0     1       NaN 0.0000000
+## scene             3     8 0.4285714 0.3750000
+## trees             2     7 0.4000000 0.2857143
+## water             3     7 0.2000000 0.4285714</code></pre>
 
 
 

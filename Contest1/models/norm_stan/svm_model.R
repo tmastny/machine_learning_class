@@ -28,10 +28,10 @@ cvCtrl = trainControl(method = "repeatedcv", number = 10,
 caret_model <- train(
   class ~ ., 
   data = training_data, 
-  method = 'svmRadialSigma', 
+  method = 'svmRadial', 
   trControl = cvCtrl)
 
-
+caret_model
 
 write_csv(data.frame(id = 1:63, class=predict(caret_model, testing_data)), 
           'Contest1/models/norm_stan/svm_norm_stan.csv')
