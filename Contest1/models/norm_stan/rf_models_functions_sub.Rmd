@@ -1,0 +1,269 @@
+---
+title: "testing"
+author: "Tim"
+date: "February 23, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, cache = TRUE)
+```
+
+```{r, echo=FALSE}
+source('ensemble_functions.R') 
+```
+
+## Ensemble of Random Forests
+
+Idea: Norm/stan transform data by column and fit an rf model. Then norm/stan transform by row and fit another model. Test
+
+```{r}
+library(tidyverse)
+library(recipes)
+library(caret)
+library(rsample)
+library(purrr)
+
+library(doMC)
+registerDoMC(cores = 4)
+
+set.seed(123)
+seeds <- vector(mode = "list", length = 11)
+
+for(i in 1:10) seeds[[i]]<- sample.int(n=1000, 4)
+seeds[[11]] <- sample.int(1000, 1)
+
+```
+```{r}
+train_data <- read_csv('../../train.csv')
+test_data <- read_csv('../../test.csv')
+```
+
+Splits for testing:
+```{r}
+split <- initial_split(train_data, prop = 0.7)
+train_data <- training(split)
+test_data <- testing(split)
+```
+
+## Transformations
+
+```{r}
+recipe_list <- list(scale = scaled, corr = corred, row_scale = row_scaled)
+cookbook <- map(recipe_list, ~.(train_data, test_data)) 
+```
+
+## Control
+
+```{r}
+control <- trainControl(
+  method = "cv", 
+  number = 10, 
+  savePredictions = 'final',
+  returnResamp = 'final',
+  classProbs = TRUE,
+  seeds = seeds)
+```
+
+## Train
+
+```{r}
+model_list <- map(
+  cookbook,
+  ~train(
+    class ~ ., 
+    data = .$training, 
+    method = 'rf', 
+    trControl = control)
+)
+```
+
+```{r}
+length(model_list)
+names(model_list)
+```
+
+## Per Model CV Results
+
+```{r}
+results <- resamples(model_list)
+summary(results)
+```
+
+```{r}
+modelCor(results)
+splom(results)
+```
+
+## Per Model Test Set Results
+
+```{r}
+matrices <- map2(
+  model_list, 
+  cookbook, 
+  ~confusion_matrix(.x, .y$testing))
+
+map(matrices, ~.[2:4])
+```
+
+
+## Ensemble Model
+
+### Prediction out of fold ensemble
+
+Shoutout to http://r4ds.had.co.nz/lists.html for nested lists
+```{r}
+pred_train <- oof_grab(model_list, train_data = map(cookbook, "training"))
+pred_test <- oof_grab(model_list, test_data = map(cookbook, "testing")) 
+```
+
+```{r}
+pred_ensemble <- train(
+  class ~ .,
+  data = pred_train,
+  method = 'rf',
+  trControl = control
+)
+```
+
+```{r}
+pred_ensemble
+```
+
+```{r}
+confusion_matrix(pred_ensemble, pred_test)[2:4]
+```
+
+### Probability ensemble
+
+```{r}
+prob_train <- oof_grab(model_list, train_data = map(cookbook, "training"), type = 'prob')
+prob_test <- oof_grab(model_list, test_data = map(cookbook, "testing"), type = 'prob') 
+```
+
+```{r}
+prob_ensemble <- train(
+  class ~ .,
+  data = prob_train,
+  method = 'rf',
+  trControl = control
+)
+```
+
+```{r}
+prob_ensemble
+```
+
+```{r}
+confusion_matrix(prob_ensemble, prob_test)[2:4]
+```
+
+## C5.0 in 
+
+Test with resample
+```{r}
+c50_model_list <- map(
+  cookbook,
+  ~train(
+    class ~ ., 
+    data = .$training, 
+    method = 'C5.0', 
+    trControl = control)
+)
+```
+
+```{r}
+results <- resamples(c50_model_list)
+summary(results)
+modelCor(results)
+```
+
+```{r}
+matrices <- map2(
+  c50_model_list, 
+  cookbook, 
+  ~confusion_matrix(.x, .y$testing))
+
+map(matrices, ~.[2:4])
+```
+
+
+## C5.0 Ensemble
+
+```{r}
+pred_train <- oof_grab(c50_model_list, train_data = map(cookbook, "training"))
+pred_test <- oof_grab(c50_model_list, test_data = map(cookbook, "testing"))
+```
+
+```{r}
+pred_ensemble <- train(
+  class ~ .,
+  data = pred_train,
+  method = 'rf',
+  trControl = control
+)
+```
+
+```{r}
+pred_ensemble
+```
+
+```{r}
+confusion_matrix(pred_ensemble, pred_test)[2:4]
+```
+
+## rf to c50 corr
+
+```{r}
+names(c50_model_list) <- map_chr(names(c50_model_list), ~paste0("c50_", .))
+names(model_list) <- map_chr(names(model_list), ~paste0("rf_", .))
+```
+
+```{r}
+model_list <- append(model_list, c50_model_list)
+```
+
+```{r}
+results <- resamples(model_list)
+summary(results)
+modelCor(results)
+```
+
+## rf c50 ensemble
+
+```{r}
+pred_train <- oof_grab(model_list, train_data = map(cookbook, "training"))
+
+test_list <- append(map(cookbook, "testing"), map(cookbook, "testing"))
+pred_test <- oof_grab(model_list, test_data = test_list)
+```
+
+```{r}
+rf_c50_ensemble <- train(
+  class ~ .,
+  data = pred_train,
+  method = 'rf',
+  trControl = control
+)
+```
+
+```{r}
+rf_c50_ensemble 
+```
+
+```{r}
+confusion_matrix(rf_c50_ensemble, pred_test)[2:4] 
+```
+
+```{r}
+write_csv(data.frame(id = 1:63, class = predict(rf_c50_ensemble, pred_test)),
+          'rf_c50_ensemble.csv')
+```
+
+
+
+
+
+
+
+

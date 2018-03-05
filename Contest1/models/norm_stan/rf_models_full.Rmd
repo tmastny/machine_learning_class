@@ -1,0 +1,297 @@
+---
+title: "testing"
+author: "Tim"
+date: "February 23, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, cache = TRUE)
+```
+
+## Ensemble of Random Forests
+
+Idea: Norm/stan transform data by column and fit an rf model. Then norm/stan transform by row and fit another model. Test
+
+```{r}
+library(tidyverse)
+library(recipes)
+library(caret)
+library(rsample)
+
+library(doMC)
+registerDoMC(cores = 4)
+
+set.seed(123)
+seeds <- vector(mode = "list", length = 11)
+
+for(i in 1:10) seeds[[i]]<- sample.int(n=1000, 4)
+seeds[[11]] <- sample.int(1000, 1)
+
+```
+```{r}
+train_data <- read_csv('../../train.csv')
+test_data <- read_csv('../../test.csv')
+```
+
+Splits for testing:
+```{r}
+# Not used when building the full model
+
+# split <- initial_split(train_data, prop = 0.7)
+# train_data <- training(split)
+# test_data <- testing(split)
+```
+
+
+## Model 1: norm_std
+
+```{r}
+paint_recipe <- recipe(class ~ ., data = head(train_data))
+
+paint_recipe <- paint_recipe %>%
+  step_center(all_predictors()) %>%
+  step_scale(all_predictors())
+
+paint_trained <- prep(paint_recipe, training = train_data)
+
+training_data <- bake(paint_trained, newdata = train_data)
+testing_data <- bake(paint_trained, newdata = test_data)
+test_1 <- testing_data
+```
+
+```{r}
+control <- trainControl(
+  method = "cv", 
+  number = 10, 
+  savePredictions = 'final',
+  returnResamp = 'final',
+  classProbs = TRUE,
+  seeds = seeds)
+
+rf_1 <- train(
+  class ~ ., 
+  data = training_data, 
+  method = 'rf', 
+  trControl = control)
+```
+
+```{r}
+rf_1
+```
+
+```{r}
+max(rf_1$results$Accuracy)
+```
+
+
+## Model 2: by row
+
+```{r}
+scale_data <- function(data) {
+  temp <- apply(data, 2, function(x) {x - mean(x)})
+  as.tibble(apply(temp, 2, function(x) {x/sd(x)}))
+}
+training_data <- scale_data(train_data[,-1])
+training_data$class <- train_data$class
+
+testing_data <- scale_data(test_data)
+testing_data$class <- test_data$class
+test_2 <- testing_data
+```
+
+```{r}
+control <- trainControl(
+  method = "cv", 
+  number = 10, 
+  savePredictions = 'final',
+  returnResamp = 'final',
+  classProbs = TRUE,
+  seeds = seeds)
+
+rf_2 <- train(
+  class ~ ., 
+  data = training_data, 
+  method = 'rf', 
+  trControl = control)
+```
+
+```{r}
+rf_2
+```
+
+```{r}
+max(rf_2$results$Accuracy)
+```
+
+
+
+## Model 3: By Corr
+
+```{r}
+paint_recipe <- recipe(class ~ ., data = head(train_data))
+
+paint_recipe <- paint_recipe %>%
+  step_center(all_predictors()) %>%
+  step_scale(all_predictors()) %>%
+  step_corr(all_predictors())
+
+paint_trained <- prep(paint_recipe, training = train_data)
+
+training_data <- bake(paint_trained, newdata = train_data)
+testing_data <- bake(paint_trained, newdata = test_data)
+test_3 <- testing_data
+```
+
+```{r}
+control <- trainControl(
+  method = "cv", 
+  number = 10, 
+  savePredictions = 'final',
+  returnResamp = 'final',
+  classProbs = TRUE,
+  seeds = seeds)
+
+rf_3 <- train(
+  class ~ ., 
+  data = training_data, 
+  method = 'rf', 
+  trControl = control)
+```
+
+```{r}
+rf_3
+```
+
+```{r}
+max(rf_3$results$Accuracy)
+```
+
+## Model Correlation
+
+Surprisingly low
+```{r}
+model_list <- list(norm_std = rf_1,
+                   row = rf_2,
+                   corr = rf_3)
+results <- resamples(model_list)
+summary(results)
+```
+
+```{r}
+modelCor(results)
+splom(results)
+```
+
+## Ensemble 
+### out of folds
+```{r}
+pred_grab <- function(models, train_data, test_data = NULL) {
+  if (!is.null(test_data)) {
+    agg_data <- purrr::map2_dfc(
+      models,
+      test_data,
+      ~predict(.x, .y))
+    return(agg_data)
+  }
+  agg_data <- purrr::map_dfc(
+    models,
+    ~.$pred$pred[order(.$pred$rowIndex)])
+  agg_data$class <- train_data$class
+  agg_data
+}
+```
+
+```{r}
+pred_train <- pred_grab(model_list, training_data)
+pred_test <- pred_grab(model_list, test_data = list(one = test_1, 
+                                                    two = test_2, 
+                                                    three = test_3))
+pred_test$class <- testing_data$class
+```
+
+```{r}
+prob_grab <- function(models, train_data, test_data = NULL) {
+  if (!is.null(test_data)) {
+    agg_data <- purrr::map2_dfc(
+      models,
+      test_data,
+      ~predict(.x, .y, type = 'prob'))
+    return(agg_data)
+  }
+  cols <- c('cold', 'dusk', 'flowers', 'impressions', 'oval', 'scene', 'trees', 'water')
+  agg_data <- purrr::map_dfc(
+    models,
+    ~.$pred[order(.$pred$rowIndex), cols])
+  agg_data$class <- train_data$class
+  agg_data
+}
+```
+```{r}
+prob_train <- prob_grab(model_list, training_data)
+prob_test <- prob_grab(model_list, test_data = list(one = test_1, 
+                                                    two = test_2, 
+                                                    three = test_3))
+prob_test$class <- testing_data$class
+```
+
+### Prediction-based Ensemble
+```{r}
+control <- trainControl(
+  method = "cv",
+  number = 10,
+  savePredictions = TRUE,
+  classProbs = TRUE)
+
+pred_ensemble <- train(
+  class ~ .,
+  data = pred_train,
+  method = 'rf',
+  trControl = control
+)
+```
+
+```{r}
+pred_ensemble
+```
+
+```{r}
+max(pred_ensemble$results$Accuracy)
+```
+
+### Probability-based ensemble
+
+```{r}
+control <- trainControl(
+  method = "cv",
+  number = 10,
+  savePredictions = TRUE,
+  classProbs = TRUE)
+
+prob_ensemble <- train(
+  class ~ .,
+  data = prob_train,
+  method = 'rf',
+  trControl = control
+)
+```
+
+```{r}
+prob_ensemble
+```
+
+```{r}
+max(prob_ensemble$results$Accuracy)
+```
+
+## Submit Results
+
+Going based on validation set performance in previous .Rmd. Therefore, will submit probability based test:
+
+
+```{r}
+write_csv(data.frame(id = 1:63, class = predict(prob_ensemble, prob_test)),
+          'rf_ensemble_prob.csv')
+```
+
+

@@ -1,0 +1,177 @@
+---
+title: "testing"
+author: "Tim"
+date: "February 23, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, cache = TRUE)
+```
+```{r, echo=FALSE}
+source('ensemble_functions.R')
+```
+
+
+## Ensemble of Models with validation split
+
+Idea: Norm/stan transform data by column and fit an rf model. Then norm/stan transform by row and fit another model. Test
+
+```{r}
+library(tidyverse)
+library(recipes)
+library(caret)
+library(rsample)
+library(caretEnsemble)
+
+library(doMC)
+registerDoMC(cores = 4)
+
+set.seed(123)
+seeds <- vector(mode = "list", length = 11)
+
+for(i in 1:10) seeds[[i]]<- sample.int(n=1000, 4)
+seeds[[11]] <- sample.int(1000, 1)
+
+```
+```{r}
+train_data <- read_csv('../../train.csv')
+test_data <- read_csv('../../test.csv')
+```
+
+Splits for testing:
+```{r}
+split <- createDataPartition(train_data$class, p = 0.7, list = FALSE)
+train_split <- train_data[split,]
+val_split <- train_data[-split,]
+```
+
+```{r}
+paint_recipe <- recipe(class ~ ., data = head(train_split))
+
+paint_recipe <- paint_recipe %>%
+  step_center(all_predictors()) %>%
+  step_scale(all_predictors())
+
+paint_trained <- prep(paint_recipe, training = train_split)
+
+training_split <- bake(paint_trained, newdata = train_split)
+val_split <- bake(paint_trained, newdata = val_split)
+
+training_data <- bake(paint_trained, newdata = train_data)
+testing_data <- bake(paint_trained, newdata = test_data)
+```
+
+## Caret List
+
+```{r}
+fit_models <- function(
+  fit_data,
+  algorithm_list = c('rf', 'glmnet', 'xgbTree', 'C5.0'))
+{
+  control <- trainControl(
+    method = "cv", 
+    number = 10, 
+    savePredictions = TRUE, 
+    classProbs = TRUE)
+  
+  model_list <- caretList(
+    class ~ .,
+    data = fit_data,
+    trControl = control,
+    methodList = algorithm_list)
+}
+model_list <- fit_models(training_split)
+
+saveRDS(model_list, 'model_list_row.RDS')
+```
+
+```{r}
+results <- resamples(model_list)
+summary(results)
+```
+
+```{r}
+modelCor(results)
+splom(results)
+```
+
+## Individual Model Accurary
+
+```{r}
+matrices <- purrr::map(model_list, ~confusion_matrix(., val_split)) 
+```
+
+## Ensemble model
+
+### out of folds
+
+```{r}
+pred_train <- oof_grab(model_list, training_split)
+pred_test <- oof_grab(model_list, test_data = val_split)
+pred_test$class <- val_split$class
+```
+
+```{r}
+prob_train <- oof_grab(model_list, training_split, type = 'prob')
+prob_test <- oof_grab(model_list, test_data = val_split, type = 'prob')
+prob_test$class <- val_split$class
+```
+
+### Prediction-based Ensemble
+
+```{r}
+control <- trainControl(
+  method = "cv",
+  number = 8,
+  savePredictions = TRUE,
+  classProbs = TRUE)
+
+pred_ensemble <- train(
+  class ~ .,
+  data = pred_train,
+  method = 'rf',
+  trControl = control
+)
+```
+
+```{r}
+pred_ensemble
+```
+
+
+```{r}
+matrix <- confusion_matrix(pred_ensemble, pred_test)
+```
+
+### Probability-based Ensemble
+
+```{r}
+control <- trainControl(
+  method = "cv",
+  number = 10,
+  savePredictions = TRUE,
+  classProbs = TRUE)
+
+prob_ensemble <- train(
+  class ~ .,
+  data = prob_train,
+  method = 'rf',
+  trControl = control
+)
+```
+
+```{r}
+prob_ensemble
+```
+
+
+```{r}
+matrix <- confusion_matrix(prob_ensemble, prob_test)
+```
+
+
+
+
+
+

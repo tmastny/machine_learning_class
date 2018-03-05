@@ -1,0 +1,120 @@
+---
+title: "testing"
+author: "Tim"
+date: "February 23, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, cache = TRUE)
+```
+
+```{r, echo=FALSE}
+source('ensemble_functions.R')
+```
+
+## Ensemble of Random Forests
+
+Idea: Norm/stan transform data by column and fit an rf model. Then norm/stan transform by row and fit another model. Test
+
+```{r}
+library(tidyverse)
+library(recipes)
+library(caret)
+library(rsample)
+library(purrr)
+
+library(doMC)
+registerDoMC(cores = 4)
+
+set.seed(123)
+seeds <- vector(mode = "list", length = 11)
+
+for(i in 1:10) seeds[[i]]<- sample.int(n=1000, 4)
+seeds[[11]] <- sample.int(1000, 1)
+
+```
+```{r}
+train_data <- read_csv('../../train.csv')
+test_data <- read_csv('../../test.csv')
+```
+
+## Transformations
+
+```{r}
+recipe_list <- list(scale = scaled, corr = corred, row_scale = row_scaled)
+cookbook <- map(recipe_list, ~.(train_data, test_data)) 
+```
+
+## Control
+
+```{r}
+control <- trainControl(
+  method = "cv", 
+  number = 10, 
+  savePredictions = 'final',
+  returnResamp = 'final',
+  classProbs = TRUE,
+  seeds = seeds)
+```
+
+## Train
+
+```{r}
+model_list <- map(
+  list(c50 = 'C5.0', rf = 'rf'),
+  function(model_name) {
+    map(
+      cookbook,
+      ~train(
+        class ~ ., 
+        data = .$training, 
+        method = model_name, 
+        trControl = control)
+    )
+  }
+)
+```
+
+```{r}
+ls.str(model_list)
+```
+
+```{r}
+names(model_list$c50) <- map_chr(names(model_list$c50), ~paste0("c50_", .))
+names(model_list$rf) <- map_chr(names(model_list$rf), ~paste0("rf_", .))
+```
+
+```{r}
+model_list <- flatten(model_list)
+```
+
+## Ensemble
+
+```{r}
+cookbook_list <- append(cookbook, cookbook)
+pred_train <- oof_grab(model_list, train_data = map(cookbook_list, "training"))
+```
+
+```{r}
+c50_rf_ensemble <- train(
+  class ~ .,
+  data = pred_train,
+  method = 'rf',
+  trControl = control)
+```
+
+```{r}
+c50_rf_ensemble
+```
+
+```{r}
+cookbook <- map(recipe_list, ~.(train_data, test_data)) 
+cookbook_list <- append(cookbook, cookbook)
+pred_train <- oof_grab(model_list, test_data = map(cookbook_list, "testing"))
+write_csv(data.frame(id = 1:63, class = predict(rf_c50_ensemble, pred_test)),
+          'rf_c50_ensemble.csv')
+```
+
+
+
