@@ -9,6 +9,33 @@ output: ioslides_presentation
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
 ```
 
+## Ensemble Model
+
+- Averaging Ensemble
+
+```{r echo=FALSE}
+knitr::include_graphics("Contest1/model averaging.png")
+```
+
+## Ensemble Model
+
+- Averaging Ensemble
+
+```{r echo=FALSE}
+knitr::include_graphics("Contest1/model averaging.png")
+```
+
+- Blended Ensemble
+
+```{r echo=FALSE}
+knitr::include_graphics("Contest1/blended.png")
+```
+
+- https://dnc1994.com/2016/05/rank-10-percent-in-first-kaggle-competition-en/
+
+- ensemble and submodels evaluated on a 30% holdout set
+- for final submission, ensemble and submodels trained on entire set
+
 ## Model Matrix
 
 - Final model matrix
@@ -19,24 +46,10 @@ as_tibble(readRDS("Contest1/models/norm_stan/pred_train.RDS"))
 ```
 
 
-## Ensemble Model
-
-- Predictions of models is used as the input to a final model
-
-```{r echo=FALSE}
-knitr::include_graphics("Contest1/blog-diagram-stacking.jpg")
-```
-
-- https://dnc1994.com/2016/05/rank-10-percent-in-first-kaggle-competition-en/
-
-- ensemble and submodels evaluated on a 30% holdout set
-- for final submission, ensemble and submodels trained on entire set
-
 ## Base Model Selection
 
 - Base models choosen by two metrics
 - maximize 10-fold CV accuracy on 70% training set
-
 ```{r echo=FALSE}
 library(caret)
 list <- readRDS('Contest1/models/norm_stan/model_list_row.RDS')
@@ -60,6 +73,7 @@ splom(results)
 - 10-fold cross-validation and correlation selection on preprocessing
     - dataset wide standardization, per image standardization, and correlation filter
 
+![](Contest1/data_set_wide.png)
 ![](Contest1/mean_image.png)
 
 ## Meta Model Selection
@@ -75,4 +89,7 @@ devtools::install_github("tmastny/leadr")
 knitr::include_graphics("Contest1/leadr_pic.png")
 ```
 
+## Todo
 
+Add public score
+reorg model matrix
