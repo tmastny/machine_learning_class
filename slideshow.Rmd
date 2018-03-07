@@ -39,6 +39,8 @@ knitr::include_graphics("Contest1/blended.png")
 ## Model Matrix
 
 - Final model matrix
+- .49 10-fold CV
+- .5238 public leaderboard
 
 ```{r}
 library(tidyverse)
@@ -88,8 +90,4 @@ devtools::install_github("tmastny/leadr")
 ```{r echo=FALSE}
 knitr::include_graphics("Contest1/leadr_pic.png")
 ```
-
-## Todo
-
-Add public score
-reorg model matrix
+ 
