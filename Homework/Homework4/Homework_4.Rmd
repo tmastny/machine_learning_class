@@ -1,0 +1,289 @@
+---
+title: "Homework 3"
+author: "Tim Mastny"
+date: "March 28, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE, 
+                      results='show', cache=TRUE, autodep=TRUE)
+```
+
+## #1, 9.7: 3
+
+### (a)
+
+```{r}
+library(tidyverse)
+obs <- tibble(
+  x1 = c(3, 2, 4, 1, 2, 4, 4),
+  x2 = c(4, 2, 4, 4, 1, 3, 1),
+  y = c(rep("red", 4), rep("blue", 3))
+)
+
+p <- ggplot(obs, aes(x = x1, y = x2, color = fct_inorder(y))) + 
+  geom_point() 
+p
+```
+
+### (b)
+
+$$
+0.5 - X_1 + X_2 = 0
+$$
+
+```{r}
+p <- p + 
+  geom_abline(slope = 1, intercept = -0.5)
+p
+```
+
+### (c)
+
+Classify red if $0.5 - X_1 + X_2 > 0$, and otherwise classify blue. 
+
+### (d) and (e)
+
+```{r}
+p <- p + 
+  geom_abline(slope = 1, intercept = 0, linetype = "dotted") + 
+  geom_abline(slope = 1, intercept = -1, linetype = "dotted")
+p
+```
+
+The dashed lines are the support vectors (as shown in Figure 9.3). The maximum margins are the distance from those points to the solid line, but I don't know how to draw that in `ggplot2`. 
+
+### (f)
+
+A small movement in the 7th observation (4, 1) would be not change the final hyperplane, because the blue points on (2, 1) and (4, 3) create the defining barrier for red vs. blue.
+
+### (g)
+
+$$
+0.25 - X_1 + X_2 = 0
+$$
+
+```{r}
+p <- p + 
+  geom_abline(slope = 1, intercept = -0.25)
+p
+```
+
+This is no longer optimal because the margins aren't maximized.
+
+### (h)
+
+```{r}
+ggplot(bind_rows(obs, list(x1 = 2, x2 = 3, y = "blue"))) + 
+  geom_point(aes(x = x1, y = x2, color = y))
+```
+
+
+##1, 9.7: 7
+
+```{r}
+library(ISLR)
+library(magrittr)
+
+autos <- ISLR::Auto
+autos %<>%
+  mutate(high_mileage = as.factor(if_else(mpg > median(mpg), 1, 0)))
+```
+
+```{r}
+library(caret)
+
+control <- trainControl(method = "cv", number = 5)
+
+linear_svm <- train(
+  high_mileage ~ .,
+  data = autos,
+  method = "svmLinear2"
+)
+linear_svm
+```
+
+The smaller cost decreases RMSE.
+
+```{r}
+poly_svm <- train(
+  high_mileage ~ .,
+  data = autos,
+  method = "svmPoly",
+  trControl = control
+)
+poly_svm
+```
+
+
+```{r}
+radial_svm <- train(
+  high_mileage ~ .,
+  data = autos,
+  method = "svmRadial",
+  trControl = control
+)
+radial_svm
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+
+## #2
+
+Feature creation:
+
+```{r}
+source("Undergrad1.R")
+
+as_tibble(train)
+as_tibble(test)
+```
+
+### (a)
+
+```{r}
+library(randomForest)
+library(rsample)
+library(purrr)
+
+five_folds <- vfold_cv(train, v = 5, strata = "class")
+sampsizes <- replicate(5, c(sample(23, size = 1), sample(30, size = 1), sample(22, size = 1), sample(17, size = 1), sample(5, size = 1), sample(28, size = 1), sample(18, size = 1), sample(35, size = 1)), simplify=FALSE)
+
+trained <-  map(
+  sampsizes,
+  function(sampsize) {
+    map(
+      five_folds$splits,
+      ~randomForest(
+        class ~ .,
+        data = analysis(.),
+        mtry = 4,
+        ntree = 1000,
+        nodesize = 3,
+        sampsize = sampsize,
+        strata = train$class
+      )
+    )
+  }
+)
+```
+
+```{r}
+accuracy <- map2(
+  trained,
+  five_folds$splits,
+  ave_accuracy
+)
+accuracy
+```
+
+So based on 5-fold cross-validation, this is the best `sampsize` parameter:
+
+```{r}
+sampsizes[[4]]
+```
+
+## (b) and (c)
+
+```{r}
+tuned_models <- list()
+for (i in 1:4) {
+  set.seed(i)
+  tuned_models[[i]] <- randomForest(
+    class ~ .,
+    data = train,
+    mtry = 4,
+    ntree = 1000,
+    nodesize = 3,
+    sampsize = sampsizes[[4]],
+    strata = train$class
+  )
+}
+```
+
+```{r}
+rf <- do.call(combine, tuned_models)
+```
+
+### (d)
+
+```{r}
+actual <- read_csv("result.csv")
+t <- table(predict(rf, newdata = test), actual$class)
+sum(diag(t))/sum(t)
+```
+
+This is well below my own submitted accuracy of ~55%. This leads me to believe that the manual relabeling done by the winning team was the recipe for success, like the class was discussing during the presentation.
+
+### #3
+
+```{r}
+carseats <- as_tibble(ISLR::Carseats)
+carseats
+```
+
+```{r}
+control <- trainControl(method = "cv", number = 5)
+
+rfgrid <- expand.grid(mtry = c(3, 5, 10))
+rf <- train(
+  Sales ~ ., 
+  data = carseats,
+  method = "rf", 
+  trControl = control,
+  tuneGrid = rfgrid
+)
+```
+
+```{r}
+rf_resid <- as.data.frame(resid(rf)) %>% mutate(obs = 1:nrow(.))
+```
+
+```{r}
+svmgrid <- expand.grid(sigma = 1/( 2 * sqrt(c(0.01, 0.1, 1, 10))),
+                       C = .1)
+svm <- train(
+  `resid(rf)` ~ ., 
+  data = rf_resid,
+  method = "svmRadial", 
+  trControl = control,
+  tuneGrid = svmgrid
+)
+```
+
+```{r}
+knngrid <- expand.grid(k = c(1, 5, 10, 20))
+knn <- train(
+  `resid(rf)` ~ ., 
+  data = rf_resid,
+  method = "knn", 
+  trControl = control,
+  tuneGrid = knngrid
+)
+```
+
+```{r fig.show='hold'}
+plot(resid(rf))
+plot(predict(svm))
+plot(predict(knn))
+```
+
+
+

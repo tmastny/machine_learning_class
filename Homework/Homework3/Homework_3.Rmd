@@ -243,7 +243,6 @@ fold_mse <- function(splits, models, weight) {
       fit <- weight_pred(test, models, weight)
       t <- table(test$y, fit)
       sum(c(t[1,1], t[2,2]))/sum(t)
-      #mean(((as.numeric(test$y) - 1) - fit)^2)
     }
   )
 }

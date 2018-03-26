@@ -1,0 +1,15 @@
+unnamed-chunk-1	obs	p	.Random.seed
+unnamed-chunk-2	p
+unnamed-chunk-3	p
+unnamed-chunk-4	p
+unnamed-chunk-5	
+unnamed-chunk-6	autos
+unnamed-chunk-7	control	linear_svm
+unnamed-chunk-8	poly_svm
+unnamed-chunk-9	radial_svm
+unnamed-chunk-10	
+unnamed-chunk-11	
+unnamed-chunk-12	
+unnamed-chunk-13	
+unnamed-chunk-14	extraColTestData	i	test	testData	train	trainAdjChop	trainChopTest	trainData	trainSub
+unnamed-chunk-15	five_folds	sampsizes	trained

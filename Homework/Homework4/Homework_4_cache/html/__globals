@@ -1,0 +1,15 @@
+unnamed-chunk-1	library	tidyverse	obs	tibble	c	rep	p	ggplot	aes	x1	x2	fct_inorder	y	geom_point
+unnamed-chunk-2	p	geom_abline
+unnamed-chunk-3	p	geom_abline
+unnamed-chunk-4	p	geom_abline
+unnamed-chunk-5	ggplot	bind_rows	obs	list	geom_point	aes	x1	x2	y
+unnamed-chunk-6	library	ISLR	magrittr	autos	Auto	%<>%	mutate	as.factor	if_else	mpg	median
+unnamed-chunk-7	library	caret	control	trainControl	linear_svm	train	high_mileage	.	autos
+unnamed-chunk-8	poly_svm	train	high_mileage	.	autos	control
+unnamed-chunk-9	radial_svm	train	high_mileage	.	autos	control
+unnamed-chunk-10	
+unnamed-chunk-11	
+unnamed-chunk-12	
+unnamed-chunk-13	
+unnamed-chunk-14	source	as_tibble	train	test
+unnamed-chunk-15	library	randomForest	rsample	purrr	five_folds	vfold_cv	train	sampsizes	replicate	c	sample	trained	map	splits	class	.	analysis	sampsize
